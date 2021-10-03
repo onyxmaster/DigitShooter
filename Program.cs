@@ -20,15 +20,84 @@ static class Program
 
     static Cell[,] _field;
     static int _cannonX;
+    static int _prevCannonX;
+    static bool _cannonFired;
+
 
     static void Main(string[] args)
     {
-        _field = new Cell[4, 6];
+        _field = new Cell[50, 30];
         Console.CursorVisible = false;
         while (true)
         {
+            ProcessInput();
+            ProcessLogic();
             DrawField();
         }
+    }
+
+    static void ProcessInput()
+    {
+        if (!Console.KeyAvailable)
+        {
+            return;
+        }
+
+        var key = Console.ReadKey(true);
+        switch (key.Key)
+        {
+            case ConsoleKey.RightArrow:
+                if (_cannonX != _field.GetLength(0) - 1)
+                {
+                    _cannonX += 1;
+                }
+                break;
+
+            case ConsoleKey.LeftArrow:
+                if (_cannonX != 0)
+                {
+                    _cannonX -= 1;
+                }
+                break;
+
+            case ConsoleKey.Spacebar:
+                _cannonFired = true;
+                break;
+        }
+    }
+
+    static void ProcessLogic()
+    {
+        _field[_prevCannonX, _field.GetLength(1) - 1] = Cell.Empty;
+        _prevCannonX = _cannonX;
+        _field[_cannonX, _field.GetLength(1) - 1] = Cell.Cannon;
+        for (int row = 0; row < _field.GetLength(1); row++)
+        {
+            for (int column = 0; column < _field.GetLength(0); column++)
+            {
+                var cell = _field[column, row];
+                switch (cell)
+                {
+                    case Cell.Projectile:
+                        _field[column, row] = Cell.Empty;
+                        if (row != 0)
+                        {
+                            AddProjectile(column, row - 1);
+                        }
+                        break;
+                }
+            }
+        }
+        if (_cannonFired)
+        {
+            AddProjectile(_cannonX, _field.GetLength(1) - 2);
+            _cannonFired = false;
+        }
+    }
+
+    static void AddProjectile(int column, int row)
+    {
+        _field[column, row] = Cell.Projectile;
     }
 
     static void DrawField()
@@ -39,12 +108,13 @@ static class Program
             for (int column = 0; column < _field.GetLength(0); column++)
             {
                 char symbol;
-                switch (_field[column, row])
+                var cell = _field[column, row];
+                switch (cell)
                 {
                     case Cell.Empty:
                         symbol = '.';
                         break;
-                        
+
                     case Cell.Digit1:
                         symbol = '1';
                         break;
@@ -98,6 +168,6 @@ static class Program
             }
             Console.WriteLine();
         }
-        
+
     }
 }
