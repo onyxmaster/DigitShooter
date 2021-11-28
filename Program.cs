@@ -15,9 +15,10 @@ static class Program
         Digit7,
         Digit8,
         Digit9,
-        Cannon,
-        Projectile,
+        Crate,
         Star,
+        Projectile,
+        Cannon,
     }
 
     static Cell[,] _field;
@@ -26,21 +27,30 @@ static class Program
 
     static int _prevCannonX;
     static int _prevCannonY;
+    static long _slowTimeEndTime;
+    static long _fireEndTime;
     static bool _cannonFired;
     static bool _bombFired;
     static bool _ultraBombFired;
+    static bool _slowTimeActivated;
+    static bool _fireActivated;
+    static bool _upActivated;
     static long _projectileTime;
     static long _digitGenTime;
     static long _digitMoveTime;
     static long _bombTime;
+    static long _ultraBombTime;
     static bool _gameOver;
     static bool _hasBomb;
     static bool _hasUltraBomb;
+    static int _slowTimeCount;
+    static int _fireCount;
+    static int _upCount;
+
     static readonly Random _rng = new();
     static int _score;
     static void Main(string[] args)
     {
-        
         _score = -40;
         _field = new Cell[5, 40];
         _cannonY = _field.GetLength(1) - 1;
@@ -64,7 +74,7 @@ static class Program
         var key = Console.ReadKey(true);
         switch (key.Key)
         {
-            
+
             case ConsoleKey.RightArrow:
                 if (_cannonX != _field.GetLength(0) - 1)
                 {
@@ -102,13 +112,16 @@ static class Program
                 break;
 
             case ConsoleKey.C:
-            if (_hasUltraBomb)
-            {
-                NewMethod(0,8);
-            }
-                _hasUltraBomb = false;
+                _ultraBombFired = true;
                 break;
-    
+
+            case ConsoleKey.S:
+                _slowTimeActivated = true;
+                break;
+
+            case ConsoleKey.F:
+                _fireActivated = true;
+                break;
 
         }
     }
@@ -132,28 +145,68 @@ static class Program
         var processBomb = time - _bombTime > BombDelay;
         _hasBomb = processBomb;
 
-        var  processUltraBomb = _hasUltraBomb;
-        _hasUltraBomb = processUltraBomb;
-
-             if (_bombFired)
+        if (_slowTimeActivated)
+        {
+            _slowTimeActivated = false;
+            if (_slowTimeCount > 0)
             {
-                _bombFired = false;
-                if (processBomb)
-            {
-                var BombRadius = 4;
-                NewMethod(time, BombRadius);
+                _slowTimeCount--;
+                const int SlowTimeTime = 5000;
+                _slowTimeEndTime = time + SlowTimeTime;
             }
         }
 
-        const int DigitGenDelay = 300;
-        var generateDigits = time - _digitGenTime > DigitGenDelay;
+        if (_fireActivated)
+        {
+            _fireActivated = false;
+            if (_fireCount > 0)
+            {
+                _fireCount--;
+                const int FireTime = 5000;
+                _fireEndTime = time + FireTime;
+            }
+        }
+
+        if (_bombFired)
+        {
+            _bombFired = false;
+            if (processBomb)
+            {
+                _bombTime = time;
+                _hasBomb = false;
+                var BombRadius = 4;
+                AddBomb(BombRadius);
+            }
+        }
+
+        const int UltraBombDelay = 1000000;
+        var processUltraBomb = time - _ultraBombTime > UltraBombDelay;
+        _hasUltraBomb = processUltraBomb;
+
+        if (_ultraBombFired)
+        {
+            _ultraBombFired = false;
+            if (processUltraBomb)
+            {
+                _ultraBombTime = time;
+                _hasUltraBomb = false;
+                var UltraBombRadius = 20;
+                AddBomb(UltraBombRadius);
+            }
+        }
+
+        var DigitDelay = 500;
+        if (_slowTimeEndTime > time)
+        {
+            DigitDelay *= 3;
+        }
+        var generateDigits = time - _digitGenTime > DigitDelay;
         if (generateDigits)
         {
             _digitGenTime = time;
         }
 
-        const int DigitMoveDelay = 300;
-        var moveDigits = time - _digitMoveTime > DigitMoveDelay;
+        var moveDigits = time - _digitMoveTime > DigitDelay;
         if (moveDigits)
         {
             _digitMoveTime = time;
@@ -206,6 +259,17 @@ static class Program
                             }
                         }
                         break;
+
+                    case Cell.Crate:
+                        if (moveDigits)
+                        {
+                            _field[column, row] = Cell.Empty;
+                            if (row != _field.GetLength(1) - 1)
+                            {
+                                AddCrate(column, row + 1);
+                            }
+                        }
+                        break;
                 }
             }
         }
@@ -223,7 +287,7 @@ static class Program
                 {
                     continue;
                 }
-                var digit = Cell.Digit1 + _rng.Next(9);
+                var digit = Cell.Digit1 + _rng.Next(10);
                 AddDigit(column, 0, digit);
             }
         }
@@ -238,26 +302,48 @@ static class Program
                 _cannonFired = false;
             }
         }
+        if (_fireEndTime > time)
+        {
+            const int FireRadius = 4;
+            for (int row = _cannonY - FireRadius; row < _cannonY + FireRadius; row++)
+            {
+                if (row < 0 || row > _field.GetLength(1) - 1)
+                {
+                    continue;
+                }
+
+                for (int column = _cannonX - FireRadius; column < _cannonX + FireRadius; column++)
+                {
+                    if (column < 0 || column > _field.GetLength(0) - 1)
+                    {
+                        continue;
+                    }
+                    if (column == _cannonX && row == _cannonY)
+                    {
+                        continue;
+                    }
+                    _field[column, row] = Cell.Empty;
+                }
+            }
+        }
     }
 
-    private static void NewMethod(long time, int BombRadius)
+    private static void AddBomb(int radius)
     {
-        _bombTime = time;
-        _hasBomb = false;
-        for (int row = _cannonY - BombRadius; row < _cannonY + BombRadius; row++)
+        for (int row = _cannonY - radius; row < _cannonY + radius; row++)
         {
             if (row < 0 || row > _field.GetLength(1) - 1)
             {
                 continue;
             }
 
-            for (int column = _cannonX - BombRadius; column < _cannonX + BombRadius; column++)
+            for (int column = _cannonX - radius; column < _cannonX + radius; column++)
             {
                 if (column < 0 || column > _field.GetLength(0) - 1)
                 {
                     continue;
                 }
-                if (_cannonX == _cannonY)
+                if (column == _cannonX && row == _cannonY)
                 {
                     continue;
                 }
@@ -275,13 +361,51 @@ static class Program
         _field[column, row] = Cell.Star;
         _gameOver = true;
     }
+
+    static void CollideCrate(int column, int row)
+    {
+        var number = _rng.Next(2);
+        switch (number)
+        {
+            case 0:
+                _slowTimeCount += 1;
+                break;
+
+            case 1:
+                _fireCount += 1;
+                break;
+
+            case 2:
+                _upCount += 1;
+                break;
+
+        }
+
+    }
+
     private static void AddCannon(int column, int row)
     {
-        if (_field[column, row] != Cell.Empty)
+        var cell = _field[column, row];
+        switch (cell)
         {
-            CollideDigit(column, row);
-            return;
+            case Cell.Digit1:
+            case Cell.Digit2:
+            case Cell.Digit3:
+            case Cell.Digit4:
+            case Cell.Digit5:
+            case Cell.Digit6:
+            case Cell.Digit7:
+            case Cell.Digit8:
+            case Cell.Digit9:
+                CollideDigit(column, row);
+                return;
+
+            case Cell.Crate:
+                CollideCrate(column, row);
+                _field[column, row] = Cell.Empty;
+                return;
         }
+
         _field[column, row] = Cell.Cannon;
     }
 
@@ -291,13 +415,48 @@ static class Program
     }
     static void AddProjectile(int column, int row)
     {
-        if (_field[column, row] != Cell.Empty)
+        var cell = _field[column, row];
+        switch (cell)
         {
-            CollideProjectile(column, row, _field[column, row]);
-            return;
+            case Cell.Digit1:
+            case Cell.Digit2:
+            case Cell.Digit3:
+            case Cell.Digit4:
+            case Cell.Digit5:
+            case Cell.Digit6:
+            case Cell.Digit7:
+            case Cell.Digit8:
+            case Cell.Digit9:
+                CollideProjectile(column, row, cell);
+                return;
+
+            case Cell.Crate:
+                CollideCrate(column, row);
+                _field[column, row] = Cell.Empty;
+                return;
         }
 
         _field[column, row] = Cell.Projectile;
+    }
+
+    static void AddCrate(int column, int row)
+    {
+        if (row == _field.GetLength(1) - 1)
+        {
+            return;
+        }
+        if (_field[column, row] == Cell.Cannon)
+        {
+            CollideCrate(column, row);
+            return;
+        }
+        if (_field[column, row] == Cell.Projectile)
+        {
+            CollideCrate(column, row);
+            return;
+        }
+
+        _field[column, row] = Cell.Crate;
     }
 
     static void AddDigit(int column, int row, Cell digit)
@@ -384,6 +543,10 @@ static class Program
                         symbol = '*';
                         break;
 
+                    case Cell.Crate:
+                        symbol = 'C';
+                        break;
+
                     default:
                         symbol = '?';
                         break;
@@ -394,6 +557,9 @@ static class Program
             Console.WriteLine();
         }
         Console.WriteLine($"{Math.Max(_score, 0):D4}");
-        Console.WriteLine(_hasBomb ? "B" : "XXXX");
+        Console.Write(_hasBomb ? 'B' : ' ');
+        Console.Write(_hasUltraBomb ? 'U' : ' ');
+        Console.WriteLine();
+        Console.WriteLine($"{_slowTimeCount:D4} {_fireCount:D4} {_upCount:D4}");
     }
 }
