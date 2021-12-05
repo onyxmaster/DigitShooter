@@ -19,6 +19,7 @@ static class Program
         Star,
         Projectile,
         Cannon,
+        UltraProjectile,
     }
 
     static Cell[,] _field;
@@ -249,6 +250,16 @@ static class Program
                             }
                         }
                         break;
+                    case Cell.UltraProjectile:
+                        if (processProjectile)
+                        {
+                            _field[column, row] = Cell.Empty;
+                            if (row != 0)
+                            {
+                                AddUltraProjectile(column, row - 1);
+                            }
+                        }
+                        break;
                 }
             }
         }
@@ -297,7 +308,7 @@ static class Program
         {
             for (int column = 0; column < _field.GetLength(0); column++)
             {
-                const double DigitProbability = 2;
+                const double DigitProbability = 0.1;
                 if (_rng.NextDouble() >= DigitProbability)
                 {
                     continue;
@@ -316,7 +327,14 @@ static class Program
             {
                 if (_cannonY != 0)
                 {
-                    AddProjectile(_cannonX, _cannonY - 1);
+                    if (_ultraCannonEndTime > _currentTime)
+                    {
+                        AddUltraProjectile(_cannonX, _cannonY - 1);
+                    }
+                    else
+                    {
+                        AddProjectile(_cannonX, _cannonY - 1);
+                    }
                 }
                 _cannonFired = false;
             }
@@ -338,6 +356,10 @@ static class Program
                         continue;
                     }
                     if (column == _cannonX && row == _cannonY)
+                    {
+                        continue;
+                    }
+                    if (_field[column, row] is < Cell.Digit1 or > Cell.Digit9)
                     {
                         continue;
                     }
@@ -366,7 +388,14 @@ static class Program
                 {
                     continue;
                 }
-                _field[column, row] = Cell.Projectile;
+                if (_ultraCannonEndTime > _currentTime)
+                {
+                    _field[column, row] = Cell.UltraProjectile;
+                }
+                else
+                {
+                    _field[column, row] = Cell.Projectile;
+                }
             }
         }
     }
@@ -397,8 +426,8 @@ static class Program
             case 2:
                 _ultraCannonCount += 1;
                 break;
-            default: 
-                Console.WriteLine("");   
+            default:
+                Console.WriteLine("");
                 Console.WriteLine("бе");
                 break;
         }
@@ -433,16 +462,12 @@ static class Program
 
     static void CollideProjectile(int column, int row, Cell digit)
     {
-        if (_ultraCannonEndTime > _currentTime)
-        {
-            _field[column, row] = Cell.Empty;
-        }
-        else
-        {
-            _field[column, row] = digit - 1;
-        }
+        _field[column, row] = digit - 1;
     }
-
+    static void CollideUltraProjectile(int column, int row)
+    {
+        _field[column, row] = Cell.Empty;
+    }
     static void AddProjectile(int column, int row)
     {
         var cell = _field[column, row];
@@ -468,6 +493,33 @@ static class Program
 
         _field[column, row] = Cell.Projectile;
     }
+
+    static void AddUltraProjectile(int column, int row)
+    {
+        var cell = _field[column, row];
+        switch (cell)
+        {
+            case Cell.Digit1:
+            case Cell.Digit2:
+            case Cell.Digit3:
+            case Cell.Digit4:
+            case Cell.Digit5:
+            case Cell.Digit6:
+            case Cell.Digit7:
+            case Cell.Digit8:
+            case Cell.Digit9:
+                CollideUltraProjectile(column, row);
+                return;
+
+            case Cell.Crate:
+                CollideCrate(column, row);
+                _field[column, row] = Cell.Empty;
+                return;
+        }
+
+        _field[column, row] = Cell.UltraProjectile;
+    }
+
 
     static void AddCrate(int column, int row)
     {
@@ -575,6 +627,10 @@ static class Program
 
                     case Cell.Crate:
                         symbol = 'C';
+                        break;
+
+                    case Cell.UltraProjectile:
+                        symbol = '+';
                         break;
 
                     default:
