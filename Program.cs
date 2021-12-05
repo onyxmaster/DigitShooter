@@ -29,12 +29,13 @@ static class Program
     static int _prevCannonY;
     static long _slowTimeEndTime;
     static long _fireEndTime;
+    static long _ultraCannonEndTime;
     static bool _cannonFired;
     static bool _bombFired;
     static bool _ultraBombFired;
     static bool _slowTimeActivated;
     static bool _fireActivated;
-    static bool _upActivated;
+    static bool _ultraCannonActivated;
     static long _projectileTime;
     static long _digitGenTime;
     static long _digitMoveTime;
@@ -45,12 +46,15 @@ static class Program
     static bool _hasUltraBomb;
     static int _slowTimeCount;
     static int _fireCount;
-    static int _upCount;
+    static int _ultraCannonCount;
 
     static readonly Random _rng = new();
     static int _score;
+    static long _currentTime;
+
     static void Main(string[] args)
     {
+        _slowTimeCount = _fireCount = _ultraCannonCount = 1;
         _score = -40;
         _field = new Cell[5, 40];
         _cannonY = _field.GetLength(1) - 1;
@@ -123,26 +127,30 @@ static class Program
                 _fireActivated = true;
                 break;
 
+            case ConsoleKey.V:
+                _ultraCannonActivated = true;
+                break;
+
         }
     }
 
     static void ProcessLogic()
     {
-        var time = GetCurrentTime();
+        _currentTime = GetCurrentTime();
         _field[_prevCannonX, _prevCannonY] = Cell.Empty;
         _prevCannonX = _cannonX;
         _prevCannonY = _cannonY;
         AddCannon(_cannonX, _cannonY);
 
         const int ProjectileDelay = 100;
-        var processProjectile = time - _projectileTime > ProjectileDelay;
+        var processProjectile = _currentTime - _projectileTime > ProjectileDelay;
         if (processProjectile)
         {
-            _projectileTime = time;
+            _projectileTime = _currentTime;
         }
 
         const int BombDelay = 5000;
-        var processBomb = time - _bombTime > BombDelay;
+        var processBomb = _currentTime - _bombTime > BombDelay;
         _hasBomb = processBomb;
 
         if (_slowTimeActivated)
@@ -152,7 +160,7 @@ static class Program
             {
                 _slowTimeCount--;
                 const int SlowTimeTime = 5000;
-                _slowTimeEndTime = time + SlowTimeTime;
+                _slowTimeEndTime = _currentTime + SlowTimeTime;
             }
         }
 
@@ -163,7 +171,18 @@ static class Program
             {
                 _fireCount--;
                 const int FireTime = 5000;
-                _fireEndTime = time + FireTime;
+                _fireEndTime = _currentTime + FireTime;
+            }
+        }
+
+        if (_ultraCannonActivated)
+        {
+            _ultraCannonActivated = false;
+            if (_ultraCannonCount > 0)
+            {
+                _ultraCannonCount--;
+                const int UltraCannonTime = 10000;
+                _ultraCannonEndTime = _currentTime + UltraCannonTime;
             }
         }
 
@@ -172,7 +191,7 @@ static class Program
             _bombFired = false;
             if (processBomb)
             {
-                _bombTime = time;
+                _bombTime = _currentTime;
                 _hasBomb = false;
                 var BombRadius = 4;
                 AddBomb(BombRadius);
@@ -180,7 +199,7 @@ static class Program
         }
 
         const int UltraBombDelay = 1000000;
-        var processUltraBomb = time - _ultraBombTime > UltraBombDelay;
+        var processUltraBomb = _currentTime - _ultraBombTime > UltraBombDelay;
         _hasUltraBomb = processUltraBomb;
 
         if (_ultraBombFired)
@@ -188,28 +207,28 @@ static class Program
             _ultraBombFired = false;
             if (processUltraBomb)
             {
-                _ultraBombTime = time;
+                _ultraBombTime = _currentTime;
                 _hasUltraBomb = false;
-                var UltraBombRadius = 20;
+                var UltraBombRadius = 10;
                 AddBomb(UltraBombRadius);
             }
         }
 
         var DigitDelay = 500;
-        if (_slowTimeEndTime > time)
+        if (_slowTimeEndTime > _currentTime)
         {
             DigitDelay *= 3;
         }
-        var generateDigits = time - _digitGenTime > DigitDelay;
+        var generateDigits = _currentTime - _digitGenTime > DigitDelay;
         if (generateDigits)
         {
-            _digitGenTime = time;
+            _digitGenTime = _currentTime;
         }
 
-        var moveDigits = time - _digitMoveTime > DigitDelay;
+        var moveDigits = _currentTime - _digitMoveTime > DigitDelay;
         if (moveDigits)
         {
-            _digitMoveTime = time;
+            _digitMoveTime = _currentTime;
             _score += 1;
         }
 
@@ -278,7 +297,7 @@ static class Program
         {
             for (int column = 0; column < _field.GetLength(0); column++)
             {
-                const double DigitProbability = 0.1;
+                const double DigitProbability = 2;
                 if (_rng.NextDouble() >= DigitProbability)
                 {
                     continue;
@@ -302,7 +321,7 @@ static class Program
                 _cannonFired = false;
             }
         }
-        if (_fireEndTime > time)
+        if (_fireEndTime > _currentTime)
         {
             const int FireRadius = 4;
             for (int row = _cannonY - FireRadius; row < _cannonY + FireRadius; row++)
@@ -364,7 +383,7 @@ static class Program
 
     static void CollideCrate(int column, int row)
     {
-        var number = _rng.Next(2);
+        var number = _rng.Next(3);
         switch (number)
         {
             case 0:
@@ -376,9 +395,12 @@ static class Program
                 break;
 
             case 2:
-                _upCount += 1;
+                _ultraCannonCount += 1;
                 break;
-
+            default: 
+                Console.WriteLine("");   
+                Console.WriteLine("бе");
+                break;
         }
 
     }
@@ -397,12 +419,12 @@ static class Program
             case Cell.Digit7:
             case Cell.Digit8:
             case Cell.Digit9:
-                CollideDigit(column, row);
+                CollideDigit(column + 5, row + 5);
                 return;
 
             case Cell.Crate:
                 CollideCrate(column, row);
-                _field[column, row] = Cell.Empty;
+                _field[column + 1, row + 1] = Cell.Digit9;
                 return;
         }
 
@@ -411,8 +433,16 @@ static class Program
 
     static void CollideProjectile(int column, int row, Cell digit)
     {
-        _field[column, row] = digit - 1;
+        if (_ultraCannonEndTime > _currentTime)
+        {
+            _field[column, row] = Cell.Empty;
+        }
+        else
+        {
+            _field[column, row] = digit - 1;
+        }
     }
+
     static void AddProjectile(int column, int row)
     {
         var cell = _field[column, row];
@@ -560,6 +590,6 @@ static class Program
         Console.Write(_hasBomb ? 'B' : ' ');
         Console.Write(_hasUltraBomb ? 'U' : ' ');
         Console.WriteLine();
-        Console.WriteLine($"{_slowTimeCount:D4} {_fireCount:D4} {_upCount:D4}");
+        Console.WriteLine($"{_slowTimeCount:D10} {_fireCount:D10} {_ultraCannonCount:D10}");
     }
 }
