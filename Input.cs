@@ -45,7 +45,7 @@ static partial class Program
                 _bombFired = true;
                 break;
 
-            case ConsoleKey.C:
+            case ConsoleKey.U:
                 _ultraBombFired = true;
                 break;
 
@@ -53,9 +53,9 @@ static partial class Program
                 _slowTimeActivated = true;
                 break;
  
-            // case ConsoleKey.F:
-            //     _fireActivated = true;
-            //     break;
+            //  case ConsoleKey.F:
+            //      _fireActivated = true;
+            //      break;
 
             case ConsoleKey.V:
                 _ultraCannonActivated = true;

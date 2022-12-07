@@ -2,9 +2,9 @@ static partial class Program
 {
     private static void ProcessLogic()
     {
-        ProcessLogic(0.1);
+        ProcessLogic(0.01);
     }
-
+             
     static void ProcessLogic(double DigitProbability)
     {
         _currentTime = GetCurrentTime();
@@ -234,5 +234,5 @@ static partial class Program
                 }
             }
         }
-    }
+    }                                        
 }

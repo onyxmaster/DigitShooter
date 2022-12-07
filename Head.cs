@@ -68,7 +68,7 @@ static partial class Program
         while (!_gameOver)
         {
             ProcessInput();
-            ProcessLogic(0.2);
+            ProcessLogic(0.1);
             DrawField();
         }
     }
