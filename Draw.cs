@@ -1,5 +1,5 @@
 ﻿static partial class Program
-{ 
+{
     static void DrawField()
     {
         Console.SetCursorPosition(0, 0);
@@ -70,6 +70,9 @@
                     case Cell.UltraProjectile:
                         symbol = '+';
                         break;
+                    case Cell.Attach:
+                        symbol = '#';
+                        break;
                     default:
                         symbol = '?';
                         break;
@@ -85,5 +88,6 @@
         Console.Write(_hasUltraBomb ? 'U' : ' ');
         Console.WriteLine();
         Console.WriteLine($"{_slowTimeCount:D10} {_fireCount:D10} {_ultraCannonCount:D10}");
+        Console.WriteLine($"{_attachLife}");
     }
 }

@@ -62,18 +62,27 @@ static partial class Program
 
     static void Main(string[] args)
     {
-        Console.CursorVisible = false;
-        _slowTimeCount = _fireCount = _ultraCannonCount = 1;
-        _score = -40;                                                            
-        _field = new Cell[5, 36];
-        _cannonY = _field.GetLength(1) - 1;
-        Console.CursorVisible = false;
-        while (!_gameOver)
+        try
         {
-            ProcessInput();
-            ProcessLogic(0.7);
-            DrawField();
+            Console.CursorVisible = false;
+            _slowTimeCount = _fireCount = _ultraCannonCount = 1;
+            _score = -40;
+            _field = new Cell[5, 36];
+            _cannonY = _field.GetLength(1) - 1;
+            Console.CursorVisible = false;
+            _attachTime = _currentTime;
+            AddAttach(0, 0, 0, 0, Cell.Digit9);
+            while (!_gameOver)
+            {
+                ProcessInput();
+                ProcessLogic(0.1);
+                DrawField();
+            }
+            Console.ReadKey();
         }
-        Console.ReadKey();
+        catch (System.Exception exception)
+        {
+            Console.Error.WriteLine(exception);
+        }
     }
 }

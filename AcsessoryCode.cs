@@ -202,5 +202,6 @@ static partial class Program
         _field[2, rowPrev + 1] = cell;
         _field[3, rowPrev + 1] = cell;
         _field[4, rowPrev + 1] = cell;
+        _field[column, row] = Cell.Attach;
     }
 }

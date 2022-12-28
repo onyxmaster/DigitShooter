@@ -1,5 +1,9 @@
 static partial class Program
 {
+    private static readonly int _attachY;
+    private static long _attachTime;
+    private static int _attachX;
+
     private static void ProcessLogic()
     {
         ProcessLogic(0.1);
@@ -253,6 +257,13 @@ static partial class Program
                     _field[column, row] = Cell.Empty;
                 }
             }
+        }
+        if (_currentTime - _attachTime >= 5000)
+        {
+            _attachTime = _currentTime;
+            var column = _rng.Next(5);
+            var row = _rng.Next(15) + 15;
+            AddAttach(_attachX, _attachY, column, row, Cell.Digit3);
         }
     }
 }
