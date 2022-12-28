@@ -19,6 +19,7 @@ static partial class Program
         Projectile,
         Cannon,
         UltraProjectile,
+        Attach,
     }
 
     private const int UltraBombRadius = 10;
@@ -56,20 +57,23 @@ static partial class Program
     static readonly Random _rng = new();
     static int _score;
     static long _currentTime;
+    static int _energy;
+    private static int _attachLife = 10;
 
     static void Main(string[] args)
     {
         Console.CursorVisible = false;
         _slowTimeCount = _fireCount = _ultraCannonCount = 1;
-        _score = -40;
-        _field = new Cell[5, 39];
+        _score = -40;                                                            
+        _field = new Cell[5, 36];
         _cannonY = _field.GetLength(1) - 1;
         Console.CursorVisible = false;
         while (!_gameOver)
         {
             ProcessInput();
-            ProcessLogic(0.1);
+            ProcessLogic(0.7);
             DrawField();
         }
+        Console.ReadKey();
     }
 }

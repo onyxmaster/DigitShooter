@@ -2,9 +2,9 @@ static partial class Program
 {
     private static void ProcessLogic()
     {
-        ProcessLogic(0.01);
+        ProcessLogic(0.1);
     }
-             
+
     static void ProcessLogic(double DigitProbability)
     {
         _currentTime = GetCurrentTime();
@@ -13,8 +13,12 @@ static partial class Program
         _prevCannonY = _cannonY;
         AddCannon(_cannonX, _cannonY);
 
-        const int ProjectileDelay = 100;
-        var processProjectile = _currentTime - _projectileTime > ProjectileDelay;
+        var projectileDelay = 100;
+        if (_fastProjectileActivated)
+        {
+            projectileDelay = 100;
+        }
+        var processProjectile = _currentTime - _projectileTime > projectileDelay;
         if (processProjectile)
         {
             _projectileTime = _currentTime;
@@ -81,6 +85,15 @@ static partial class Program
                 _ultraBombTime = _currentTime;
                 _hasUltraBomb = false;
                 AddBomb(UltraBombRadius);
+            }
+        }
+        var processfastProjectile = _currentTime - _projectileTime > BombDelay;
+        if (_fastProjectileActivated)
+        {
+            _fastProjectileActivated = false;
+            if (processUltraBomb)
+            {
+                _projectileTime = _currentTime;
             }
         }
 
@@ -168,6 +181,13 @@ static partial class Program
                             }
                         }
                         break;
+                    case Cell.Attach:
+                        if (_attachLife == 1)
+                        {
+                            _gameOver = true;
+                        }
+                        _attachLife--;
+                        break;
                 }
             }
         }
@@ -184,7 +204,7 @@ static partial class Program
                 {
                     continue;
                 }
-                var digit = Cell.Digit1 + _rng.Next(10);
+                var digit = Cell.Digit1 + _rng.Next(11);
                 AddDigit(column, 0, digit);
             }
         }
@@ -234,5 +254,5 @@ static partial class Program
                 }
             }
         }
-    }                                        
+    }
 }

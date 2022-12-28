@@ -151,7 +151,10 @@ static partial class Program
         _field[column, row] = Cell.UltraProjectile;
     }
 
-
+    static void CollideEnergy()
+    {
+        _energy++;
+    }
     static void AddCrate(int column, int row)
     {
         if (row == _field.GetLength(1) - 1)
@@ -191,5 +194,13 @@ static partial class Program
         }
 
         _field[column, row] = digit;
+    }
+    static void AddAttach(int columnPrev, int rowPrev, int column, int row, Cell cell)
+    {
+        _field[0, rowPrev + 1] = cell;
+        _field[1, rowPrev + 1] = cell;
+        _field[2, rowPrev + 1] = cell;
+        _field[3, rowPrev + 1] = cell;
+        _field[4, rowPrev + 1] = cell;
     }
 }
